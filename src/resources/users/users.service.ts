@@ -9,7 +9,7 @@ import { UpdateUserDto } from './dtos/update-user.dto';
 export class UsersService {
   constructor(private readonly databaseService: DatabaseService) {}
 
-  async create({ email, name, password }: CreateUserDto) {
+  async createUser({ email, name, password }: CreateUserDto) {
     const user = await this.databaseService.user.create({
       data: { name, email, password },
     });
@@ -17,19 +17,22 @@ export class UsersService {
     return user;
   }
 
-  async findMany() {
+  async getUsers() {
     const users = await this.databaseService.user.findMany();
 
     return users;
   }
 
-  async findUnique({ id }: GetUserDto) {
+  async getUser({ id }: GetUserDto) {
     const user = await this.databaseService.user.findUnique({ where: { id } });
 
     return user;
   }
 
-  async update({ id }: GetUserDto, { email, name, password }: UpdateUserDto) {
+  async updateUser(
+    { id }: GetUserDto,
+    { email, name, password }: UpdateUserDto,
+  ) {
     const user = await this.databaseService.user.update({
       where: { id },
       data: { email, name, password },
@@ -38,7 +41,7 @@ export class UsersService {
     return user;
   }
 
-  async delete({ id }: GetUserDto) {
+  async deleteUser({ id }: GetUserDto) {
     await this.databaseService.user.delete({ where: { id } });
   }
 }

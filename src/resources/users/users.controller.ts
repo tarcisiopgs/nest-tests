@@ -30,9 +30,13 @@ export class UsersController {
   @ApiCreatedResponse({ description: 'User created' })
   @ApiBadRequestResponse({ description: 'User not created' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
-  async create(@Body() { email, name, password }: CreateUserDto) {
+  async store(@Body() { email, name, password }: CreateUserDto) {
     try {
-      const data = await this.usersService.create({ email, name, password });
+      const data = await this.usersService.createUser({
+        email,
+        name,
+        password,
+      });
 
       return { message: 'User created successfully', data };
     } catch (e) {
@@ -45,9 +49,9 @@ export class UsersController {
   @ApiOkResponse({ description: 'Users getted' })
   @ApiBadRequestResponse({ description: 'Users not getted' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
-  async findMany() {
+  async index() {
     try {
-      const data = await this.usersService.findMany();
+      const data = await this.usersService.getUsers();
 
       return { message: 'Users getted successfully', data };
     } catch (e) {
@@ -60,9 +64,9 @@ export class UsersController {
   @ApiOkResponse({ description: 'User getted ' })
   @ApiBadRequestResponse({ description: 'User not getted' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
-  async findUnique(@Param() { id }: GetUserDto) {
+  async show(@Param() { id }: GetUserDto) {
     try {
-      const data = await this.usersService.findUnique({ id });
+      const data = await this.usersService.getUser({ id });
 
       return { message: 'User getted successfully', data };
     } catch (e) {
@@ -80,7 +84,7 @@ export class UsersController {
     @Body() { email, name, password }: UpdateUserDto,
   ) {
     try {
-      const data = await this.usersService.update(
+      const data = await this.usersService.updateUser(
         { id },
         { email, name, password },
       );
@@ -96,9 +100,9 @@ export class UsersController {
   @ApiOkResponse({ description: 'User deleted ' })
   @ApiBadRequestResponse({ description: 'User not deleted' })
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
-  async delete(@Param() { id }: GetUserDto) {
+  async destroy(@Param() { id }: GetUserDto) {
     try {
-      await this.usersService.delete({ id });
+      await this.usersService.deleteUser({ id });
 
       return { message: 'User deleted successfully' };
     } catch (e) {
