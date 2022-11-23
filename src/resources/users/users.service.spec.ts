@@ -1,7 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { v4 } from 'uuid';
 
-import { prismaMock } from '../../../tests/prisma/singleton';
+import { prismaMock } from '../../../tests/mocks/prisma/singleton';
 import { DatabaseService } from '../../core/database/database.service';
 import { UsersService } from './users.service';
 
@@ -25,7 +25,7 @@ describe('UsersService', () => {
     const createdAt = new Date();
     const updatedAt = createdAt;
 
-    prismaMock.user.findMany.mockResolvedValue([
+    prismaMock.user.findMany.mockResolvedValueOnce([
       {
         id,
         email: 'john@doe.com',
@@ -47,7 +47,7 @@ describe('UsersService', () => {
     const createdAt = new Date();
     const updatedAt = createdAt;
 
-    prismaMock.user.findUnique.mockResolvedValue({
+    prismaMock.user.findUnique.mockResolvedValueOnce({
       id,
       email: 'john@doe.com',
       name: 'John Doe',
@@ -69,7 +69,7 @@ describe('UsersService', () => {
     const createdAt = new Date();
     const updatedAt = createdAt;
 
-    prismaMock.user.create.mockResolvedValue({
+    prismaMock.user.create.mockResolvedValueOnce({
       id,
       email: 'john@doe.com',
       name: 'John Doe',
@@ -97,7 +97,7 @@ describe('UsersService', () => {
     const createdAt = new Date();
     const updatedAt = new Date(createdAt.getTime() + 30 * 60000);
 
-    prismaMock.user.update.mockResolvedValue({
+    prismaMock.user.update.mockResolvedValueOnce({
       id,
       email: 'john@doe.com',
       name,
@@ -120,7 +120,7 @@ describe('UsersService', () => {
     const createdAt = new Date();
     const updatedAt = createdAt;
 
-    prismaMock.user.delete.mockResolvedValue({
+    prismaMock.user.delete.mockResolvedValueOnce({
       id,
       email: 'john@doe.com',
       name: 'John Doe',

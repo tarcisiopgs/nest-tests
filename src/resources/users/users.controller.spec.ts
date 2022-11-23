@@ -1,32 +1,24 @@
 import { Test } from '@nestjs/testing';
 import { v4 } from 'uuid';
 
+import { DatabaseService } from '../../core/database/database.service';
+import { prismaMock } from '../../../tests/mocks/prisma/singleton';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 
-const serviceMock = {
-  createUser: jest.fn(() => null),
-  getUsers: jest.fn(() => null),
-  getUser: jest.fn(() => null),
-  updateUser: jest.fn(() => null),
-  deleteUser: jest.fn(() => null),
-};
-
 describe('UsersController', () => {
   let usersController: UsersController;
-  let usersService: UsersService;
 
   beforeEach(async () => {
     const module = await Test.createTestingModule({
       controllers: [UsersController],
-      providers: [UsersService],
+      providers: [UsersService, DatabaseService],
     })
-      .overrideProvider(UsersService)
-      .useValue(serviceMock)
+      .overrideProvider(DatabaseService)
+      .useValue(prismaMock)
       .compile();
 
     usersController = module.get<UsersController>(UsersController);
-    usersService = module.get<UsersService>(UsersService);
   });
 
   it('Should be able to get users', async () => {
@@ -34,7 +26,7 @@ describe('UsersController', () => {
     const createdAt = new Date();
     const updatedAt = createdAt;
 
-    jest.spyOn(usersService, 'getUsers').mockResolvedValue([
+    prismaMock.user.findMany.mockResolvedValueOnce([
       {
         id,
         email: 'john@doe.com',
@@ -59,7 +51,7 @@ describe('UsersController', () => {
     const createdAt = new Date();
     const updatedAt = createdAt;
 
-    jest.spyOn(usersService, 'getUser').mockResolvedValue({
+    prismaMock.user.findUnique.mockResolvedValueOnce({
       id,
       email: 'john@doe.com',
       name: 'John Doe',
@@ -79,12 +71,12 @@ describe('UsersController', () => {
     expect(response.data).toHaveProperty('updatedAt');
   });
 
-  it('Should de able to create a user', async () => {
+  it('Should be able to create a user', async () => {
     const id = v4();
     const createdAt = new Date();
     const updatedAt = createdAt;
 
-    jest.spyOn(usersService, 'createUser').mockResolvedValue({
+    prismaMock.user.create.mockResolvedValueOnce({
       id,
       email: 'john@doe.com',
       name: 'John Doe',
@@ -117,7 +109,7 @@ describe('UsersController', () => {
     const createdAt = new Date();
     const updatedAt = new Date(createdAt.getTime() + 30 * 60000);
 
-    jest.spyOn(usersService, 'updateUser').mockResolvedValue({
+    prismaMock.user.update.mockResolvedValueOnce({
       id,
       email: 'john@doe.com',
       name,
@@ -145,7 +137,7 @@ describe('UsersController', () => {
     const createdAt = new Date();
     const updatedAt = createdAt;
 
-    jest.spyOn(usersService, 'deleteUser').mockResolvedValue({
+    prismaMock.user.delete.mockResolvedValueOnce({
       id,
       email: 'john@doe.com',
       name: 'John Doe',
@@ -166,7 +158,7 @@ describe('UsersController', () => {
   });
 
   it('Should not be able to get users', async () => {
-    jest.spyOn(usersService, 'getUsers').mockRejectedValue(null);
+    prismaMock.user.findMany.mockRejectedValueOnce(null);
 
     await expect(usersController.index()).rejects.toThrow();
   });
@@ -174,13 +166,13 @@ describe('UsersController', () => {
   it('Should not be able to get a user', async () => {
     const id = v4();
 
-    jest.spyOn(usersService, 'getUser').mockRejectedValue(null);
+    prismaMock.user.findUnique.mockRejectedValueOnce(null);
 
     await expect(usersController.show({ id })).rejects.toThrow();
   });
 
   it('Should not be able to create a user', async () => {
-    jest.spyOn(usersService, 'createUser').mockRejectedValue(null);
+    prismaMock.user.create.mockRejectedValueOnce(null);
 
     await expect(
       usersController.store({
@@ -195,14 +187,15 @@ describe('UsersController', () => {
     const id = v4();
     const name = 'John Doe Updated';
 
-    jest.spyOn(usersService, 'updateUser').mockRejectedValue(null);
+    prismaMock.user.update.mockRejectedValueOnce(null);
 
     await expect(usersController.update({ id }, { name })).rejects.toThrow();
   });
 
   it('Should not be able to delete a user', async () => {
     const id = v4();
-    jest.spyOn(usersService, 'deleteUser').mockRejectedValue(null);
+
+    prismaMock.user.delete.mockRejectedValueOnce(null);
 
     await expect(usersController.destroy({ id })).rejects.toThrow();
   });
