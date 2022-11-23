@@ -102,9 +102,9 @@ export class UsersController {
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
   async destroy(@Param() { id }: GetUserDto) {
     try {
-      await this.usersService.deleteUser({ id });
+      const data = await this.usersService.deleteUser({ id });
 
-      return { message: 'User deleted successfully' };
+      return { message: 'User deleted successfully', data };
     } catch (e) {
       throw new BadRequestException(e);
     }

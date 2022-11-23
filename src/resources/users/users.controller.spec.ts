@@ -1,11 +1,16 @@
-import { BadRequestException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
+import { v4 } from 'uuid';
 
-import { CreateUserDto } from './dtos/create-user.dto';
-import { GetUserDto } from './dtos/get-user.dto';
-import { UpdateUserDto } from './dtos/update-user.dto';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
+
+const serviceMock = {
+  createUser: jest.fn(() => null),
+  getUsers: jest.fn(() => null),
+  getUser: jest.fn(() => null),
+  updateUser: jest.fn(() => null),
+  deleteUser: jest.fn(() => null),
+};
 
 describe('UsersController', () => {
   let usersController: UsersController;
@@ -17,191 +22,188 @@ describe('UsersController', () => {
       providers: [UsersService],
     })
       .overrideProvider(UsersService)
-      .useValue({
-        createUser: jest.fn(() => null),
-        getUsers: jest.fn(() => null),
-        getUser: jest.fn(() => null),
-        updateUser: jest.fn(() => null),
-        deleteUser: jest.fn(() => null),
-      })
+      .useValue(serviceMock)
       .compile();
 
     usersController = module.get<UsersController>(UsersController);
     usersService = module.get<UsersService>(UsersService);
   });
 
-  describe('Success states', () => {
-    it('Should be able to get users', async () => {
-      jest.spyOn(usersService, 'getUsers').mockImplementationOnce(() => {
-        return Promise.resolve([]);
-      });
+  it('Should be able to get users', async () => {
+    const id = v4();
+    const createdAt = new Date();
+    const updatedAt = createdAt;
 
-      const response = await usersController.index();
-
-      expect(response).toHaveProperty('message');
-      expect(response).toHaveProperty('data');
-      expect(response.data).toBeInstanceOf(Array);
-    });
-
-    it('Should be able to get a user', async () => {
-      jest
-        .spyOn(usersService, 'getUser')
-        .mockImplementationOnce(({ id }: GetUserDto) => {
-          const now = new Date();
-
-          return Promise.resolve({
-            id,
-            email: 'john@doe.com',
-            name: 'John Doe',
-            password: '123456',
-            createdAt: now,
-            updatedAt: now,
-          });
-        });
-
-      const response = await usersController.show({ id: '1' });
-
-      expect(response).toHaveProperty('message');
-      expect(response).toHaveProperty('data');
-      expect(response.data).toBeInstanceOf(Object);
-    });
-
-    it('Should de able to create a user', async () => {
-      jest
-        .spyOn(usersService, 'createUser')
-        .mockImplementationOnce(({ email, name, password }: CreateUserDto) => {
-          const now = new Date();
-
-          return Promise.resolve({
-            id: '1',
-            email,
-            name,
-            password,
-            createdAt: now,
-            updatedAt: now,
-          });
-        });
-
-      const response = await usersController.store({
+    jest.spyOn(usersService, 'getUsers').mockResolvedValue([
+      {
+        id,
         email: 'john@doe.com',
         name: 'John Doe',
         password: '123456',
-      });
+        createdAt,
+        updatedAt,
+      },
+    ]);
 
-      expect(response).toHaveProperty('message');
-      expect(response).toHaveProperty('data');
-      expect(response.data.createdAt.getTime()).toEqual(
-        response.data.updatedAt.getTime(),
-      );
-    });
+    const response = await usersController.index();
 
-    it('Should be able to update a user', async () => {
-      jest
-        .spyOn(usersService, 'updateUser')
-        .mockImplementationOnce(
-          ({ id }: GetUserDto, { email, name, password }: UpdateUserDto) => {
-            const createdAt = new Date();
-            const updatedAt = new Date(createdAt.getTime() + 30 * 60000);
-
-            return Promise.resolve({
-              id,
-              email,
-              name,
-              password,
-              createdAt,
-              updatedAt,
-            });
-          },
-        );
-
-      const response = await usersController.update(
-        { id: '1' },
-        {
-          email: 'john_updated@doe.com',
-          name: 'John Doe Updated',
-          password: '123456789',
-        },
-      );
-
-      expect(response).toHaveProperty('message');
-      expect(response).toHaveProperty('data');
-      expect(response.data.createdAt.getTime()).toBeLessThan(
-        response.data.updatedAt.getTime(),
-      );
-    });
-
-    it('Should be able to delete a user', async () => {
-      jest.spyOn(usersService, 'deleteUser').mockImplementationOnce(() => {
-        return Promise.resolve();
-      });
-
-      const response = await usersController.destroy({ id: '1' });
-
-      expect(response).toHaveProperty('message');
-      expect(response).not.toHaveProperty('data');
-    });
+    expect(response).toBeInstanceOf(Object);
+    expect(response).toHaveProperty('message');
+    expect(response).toHaveProperty('data');
+    expect(response.data).toBeInstanceOf(Array);
+    expect(response.data.length).toBeGreaterThanOrEqual(0);
   });
 
-  describe('Error states', () => {
-    it('Should not be able to get users', async () => {
-      jest.spyOn(usersService, 'getUsers').mockImplementationOnce(() => {
-        return Promise.reject();
-      });
+  it('Should be able to get a user', async () => {
+    const id = v4();
+    const createdAt = new Date();
+    const updatedAt = createdAt;
 
-      expect(usersController.index()).rejects.toBeInstanceOf(
-        BadRequestException,
-      );
+    jest.spyOn(usersService, 'getUser').mockResolvedValue({
+      id,
+      email: 'john@doe.com',
+      name: 'John Doe',
+      password: '123456',
+      createdAt,
+      updatedAt,
     });
 
-    it('Should not be able to get a user', async () => {
-      jest.spyOn(usersService, 'getUser').mockImplementationOnce(() => {
-        return Promise.reject();
-      });
+    const response = await usersController.show({ id });
 
-      expect(usersController.show({ id: '1' })).rejects.toBeInstanceOf(
-        BadRequestException,
-      );
+    expect(response).toBeInstanceOf(Object);
+    expect(response).toHaveProperty('message');
+    expect(response).toHaveProperty('data');
+    expect(response.data).toBeInstanceOf(Object);
+    expect(response.data).toHaveProperty('id');
+    expect(response.data).toHaveProperty('createdAt');
+    expect(response.data).toHaveProperty('updatedAt');
+  });
+
+  it('Should de able to create a user', async () => {
+    const id = v4();
+    const createdAt = new Date();
+    const updatedAt = createdAt;
+
+    jest.spyOn(usersService, 'createUser').mockResolvedValue({
+      id,
+      email: 'john@doe.com',
+      name: 'John Doe',
+      password: '123456',
+      createdAt,
+      updatedAt,
     });
 
-    it('Should not be able to create a user', async () => {
-      jest.spyOn(usersService, 'createUser').mockImplementationOnce(() => {
-        return Promise.reject();
-      });
-
-      expect(
-        usersController.store({
-          email: 'john@doe.com',
-          name: 'John Doe',
-          password: '123456',
-        }),
-      ).rejects.toBeInstanceOf(BadRequestException);
+    const response = await usersController.store({
+      email: 'john@doe.com',
+      name: 'John Doe',
+      password: '123456',
     });
 
-    it('Should not be able to update a user', async () => {
-      jest.spyOn(usersService, 'updateUser').mockImplementationOnce(() => {
-        return Promise.reject();
-      });
+    expect(response).toBeInstanceOf(Object);
+    expect(response).toHaveProperty('message');
+    expect(response).toHaveProperty('data');
+    expect(response.data).toBeInstanceOf(Object);
+    expect(response.data).toHaveProperty('id');
+    expect(response.data).toHaveProperty('createdAt');
+    expect(response.data).toHaveProperty('updatedAt');
+    expect(response.data.createdAt.getTime()).toEqual(
+      response.data.updatedAt.getTime(),
+    );
+  });
 
-      expect(
-        usersController.update(
-          { id: '1' },
-          {
-            email: 'john_updated@doe.com',
-            name: 'John Doe Updated',
-            password: '123456789',
-          },
-        ),
-      ).rejects.toBeInstanceOf(BadRequestException);
+  it('Should be able to update a user', async () => {
+    const id = v4();
+    const name = 'John Doe Updated';
+    const createdAt = new Date();
+    const updatedAt = new Date(createdAt.getTime() + 30 * 60000);
+
+    jest.spyOn(usersService, 'updateUser').mockResolvedValue({
+      id,
+      email: 'john@doe.com',
+      name,
+      password: '123456',
+      createdAt,
+      updatedAt,
     });
 
-    it('Should not be able to delete a user', async () => {
-      jest.spyOn(usersService, 'deleteUser').mockImplementationOnce(() => {
-        return Promise.reject();
-      });
+    const response = await usersController.update({ id }, { name });
 
-      expect(usersController.destroy({ id: '1' })).rejects.toBeInstanceOf(
-        BadRequestException,
-      );
+    expect(response).toBeInstanceOf(Object);
+    expect(response).toHaveProperty('message');
+    expect(response).toHaveProperty('data');
+    expect(response.data).toBeInstanceOf(Object);
+    expect(response.data).toHaveProperty('id');
+    expect(response.data).toHaveProperty('createdAt');
+    expect(response.data).toHaveProperty('updatedAt');
+    expect(response.data.createdAt.getTime()).toBeLessThan(
+      response.data.updatedAt.getTime(),
+    );
+  });
+
+  it('Should be able to delete a user', async () => {
+    const id = v4();
+    const createdAt = new Date();
+    const updatedAt = createdAt;
+
+    jest.spyOn(usersService, 'deleteUser').mockResolvedValue({
+      id,
+      email: 'john@doe.com',
+      name: 'John Doe',
+      password: '123456',
+      createdAt,
+      updatedAt,
     });
+
+    const response = await usersController.destroy({ id });
+
+    expect(response).toBeInstanceOf(Object);
+    expect(response).toHaveProperty('message');
+    expect(response).toHaveProperty('data');
+    expect(response.data).toBeInstanceOf(Object);
+    expect(response.data).toHaveProperty('id');
+    expect(response.data).toHaveProperty('createdAt');
+    expect(response.data).toHaveProperty('updatedAt');
+  });
+
+  it('Should not be able to get users', async () => {
+    jest.spyOn(usersService, 'getUsers').mockRejectedValue(null);
+
+    await expect(usersController.index()).rejects.toThrow();
+  });
+
+  it('Should not be able to get a user', async () => {
+    const id = v4();
+
+    jest.spyOn(usersService, 'getUser').mockRejectedValue(null);
+
+    await expect(usersController.show({ id })).rejects.toThrow();
+  });
+
+  it('Should not be able to create a user', async () => {
+    jest.spyOn(usersService, 'createUser').mockRejectedValue(null);
+
+    await expect(
+      usersController.store({
+        email: 'john@doe.com',
+        name: 'John Doe',
+        password: '123456',
+      }),
+    ).rejects.toThrow();
+  });
+
+  it('Should not be able to update a user', async () => {
+    const id = v4();
+    const name = 'John Doe Updated';
+
+    jest.spyOn(usersService, 'updateUser').mockRejectedValue(null);
+
+    await expect(usersController.update({ id }, { name })).rejects.toThrow();
+  });
+
+  it('Should not be able to delete a user', async () => {
+    const id = v4();
+    jest.spyOn(usersService, 'deleteUser').mockRejectedValue(null);
+
+    await expect(usersController.destroy({ id })).rejects.toThrow();
   });
 });

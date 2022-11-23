@@ -42,6 +42,8 @@ export class UsersService {
   }
 
   async deleteUser({ id }: GetUserDto) {
-    await this.databaseService.user.delete({ where: { id } });
+    const user = await this.databaseService.user.delete({ where: { id } });
+
+    return user;
   }
 }

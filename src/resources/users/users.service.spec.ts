@@ -1,11 +1,11 @@
 import { Test } from '@nestjs/testing';
-import { User } from '@prisma/client';
+import { v4 } from 'uuid';
 
+import { prismaMock } from '../../../tests/prisma/singleton';
 import { DatabaseService } from '../../core/database/database.service';
 import { UsersService } from './users.service';
 
 describe('UsersService', () => {
-  let databaseService: DatabaseService;
   let usersService: UsersService;
 
   beforeEach(async () => {
@@ -14,171 +14,126 @@ describe('UsersService', () => {
       providers: [DatabaseService],
     })
       .overrideProvider(DatabaseService)
-      .useValue({
-        user: {
-          create: jest.fn(() => null),
-          findMany: jest.fn(() => null),
-          findUnique: jest.fn(() => null),
-          update: jest.fn(() => null),
-          delete: jest.fn(() => null),
-        },
-      })
+      .useValue(prismaMock)
       .compile();
 
     usersService = module.get<UsersService>(UsersService);
-    databaseService = module.get<DatabaseService>(DatabaseService);
   });
 
-  describe('Success states', () => {
-    it('Should be able to get users', async () => {
-      jest
-        .spyOn(databaseService.user, 'create')
-        .mockImplementationOnce(
-          ({ data: { email, name, password } }: any): any => {
-            const now = new Date();
-            const user: User = {
-              id: '1',
-              email,
-              name,
-              password,
-              createdAt: now,
-              updatedAt: now,
-            };
+  it('Should be able to get users', async () => {
+    const id = v4();
+    const createdAt = new Date();
+    const updatedAt = createdAt;
 
-            return Promise.resolve(user);
-          },
-        );
-
-      const data = await usersService.createUser({
+    prismaMock.user.findMany.mockResolvedValue([
+      {
+        id,
         email: 'john@doe.com',
         name: 'John Doe',
         password: '123456',
-      });
+        createdAt,
+        updatedAt,
+      },
+    ]);
 
-      expect(data).toHaveProperty('id');
-    });
+    const data = await usersService.getUsers();
 
-    // it('must not be able to create a user', async () => {
-    //   const spy = jest.spyOn(usersService, 'create');
-
-    //   spy.mockRejectedValue(null);
-
-    //   try {
-    //     await usersController.create({
-    //       email: 'john@doe.com',
-    //       name: 'John Doe',
-    //       password: '123456',
-    //     });
-    //   } catch (e) {
-    //     expect(e).toBeInstanceOf(BadRequestException);
-    //   }
-
-    //   spy.mockReset();
-    //   spy.mockRestore();
-    // });
-
-    // it('must be able to get all users', async () => {
-    //   const response = await usersController.findMany();
-
-    //   expect(response.data).toEqual(
-    //     expect.arrayContaining<User>([
-    //       expect.objectContaining({ id: expect.stringContaining('-') }),
-    //     ]),
-    //   );
-    // });
-
-    // it('must not be able to get all users', async () => {
-    //   const spy = jest.spyOn(usersService, 'findMany');
-
-    //   spy.mockRejectedValue(null);
-
-    //   try {
-    //     await usersController.findMany();
-    //   } catch (e) {
-    //     expect(e).toBeInstanceOf(BadRequestException);
-    //   }
-
-    //   spy.mockReset();
-    //   spy.mockRestore();
-    // });
-
-    // it('must be able to get a user', async () => {
-    //   const { id } = users[0];
-
-    //   const response = await usersController.findUnique({ id });
-
-    //   expect(response.data).toEqual(
-    //     expect.objectContaining({ id: expect.stringContaining('-') }),
-    //   );
-    // });
-
-    // it('must not be able to get a user', async () => {
-    //   const { id } = users[0];
-    //   const spy = jest.spyOn(usersService, 'findUnique');
-
-    //   spy.mockRejectedValue(null);
-
-    //   try {
-    //     await usersController.findUnique({ id });
-    //   } catch (e) {
-    //     expect(e).toBeInstanceOf(BadRequestException);
-    //   }
-
-    //   spy.mockReset();
-    //   spy.mockRestore();
-    // });
-
-    // it('must be able to update a user', async () => {
-    //   const { id } = users[0];
-
-    //   const response = await usersController.update(
-    //     { id },
-    //     { name: 'John Doe updated' },
-    //   );
-
-    //   expect(response.data).toHaveProperty('id');
-    // });
-
-    // it('must not be able to update a user', async () => {
-    //   const { id } = users[0];
-    //   const spy = jest.spyOn(usersService, 'update');
-
-    //   spy.mockRejectedValue(null);
-
-    //   try {
-    //     await usersController.update({ id }, { name: 'John Doe updated' });
-    //   } catch (e) {
-    //     expect(e).toBeInstanceOf(BadRequestException);
-    //   }
-
-    //   spy.mockReset();
-    //   spy.mockRestore();
-    // });
-
-    // it('must not be able to delete a user', async () => {
-    //   const { id } = users[0];
-    //   const spy = jest.spyOn(usersService, 'delete');
-
-    //   spy.mockRejectedValue(null);
-
-    //   try {
-    //     await usersController.delete({ id });
-    //   } catch (e) {
-    //     expect(e).toBeInstanceOf(BadRequestException);
-
-    //     spy.mockReset();
-    //     spy.mockRestore();
-    //   }
-    // });
-
-    // it('must be able to delete a user', async () => {
-    //   const { id } = users[0];
-
-    //   const response = await usersController.delete({ id });
-
-    //   expect(response).toHaveProperty('message');
-    // });
+    expect(data).toBeInstanceOf(Array);
+    expect(data.length).toBeGreaterThanOrEqual(0);
   });
 
-  describe('Error states', () => {});
+  it('Should be able to get a user', async () => {
+    const id = v4();
+    const createdAt = new Date();
+    const updatedAt = createdAt;
+
+    prismaMock.user.findUnique.mockResolvedValue({
+      id,
+      email: 'john@doe.com',
+      name: 'John Doe',
+      password: '123456',
+      createdAt,
+      updatedAt,
+    });
+
+    const data = await usersService.getUser({ id: '1' });
+
+    expect(data).toBeInstanceOf(Object);
+    expect(data).toHaveProperty('id');
+    expect(data).toHaveProperty('createdAt');
+    expect(data).toHaveProperty('updatedAt');
+  });
+
+  it('Should be able to create a user', async () => {
+    const id = v4();
+    const createdAt = new Date();
+    const updatedAt = createdAt;
+
+    prismaMock.user.create.mockResolvedValue({
+      id,
+      email: 'john@doe.com',
+      name: 'John Doe',
+      password: '123456',
+      createdAt,
+      updatedAt,
+    });
+
+    const data = await usersService.createUser({
+      email: 'john@doe.com',
+      name: 'John Doe',
+      password: '123456',
+    });
+
+    expect(data).toBeInstanceOf(Object);
+    expect(data).toHaveProperty('id');
+    expect(data).toHaveProperty('createdAt');
+    expect(data).toHaveProperty('updatedAt');
+    expect(data.createdAt.getTime()).toEqual(data.updatedAt.getTime());
+  });
+
+  it('Should be able to update a user', async () => {
+    const id = v4();
+    const name = 'John Doe Updated';
+    const createdAt = new Date();
+    const updatedAt = new Date(createdAt.getTime() + 30 * 60000);
+
+    prismaMock.user.update.mockResolvedValue({
+      id,
+      email: 'john@doe.com',
+      name,
+      password: '123456',
+      createdAt,
+      updatedAt,
+    });
+
+    const data = await usersService.updateUser({ id }, { name });
+
+    expect(data).toBeInstanceOf(Object);
+    expect(data).toHaveProperty('id');
+    expect(data).toHaveProperty('createdAt');
+    expect(data).toHaveProperty('updatedAt');
+    expect(data.createdAt.getTime()).toBeLessThan(data.updatedAt.getTime());
+  });
+
+  it('Should be able to delete a user', async () => {
+    const id = v4();
+    const createdAt = new Date();
+    const updatedAt = createdAt;
+
+    prismaMock.user.delete.mockResolvedValue({
+      id,
+      email: 'john@doe.com',
+      name: 'John Doe',
+      password: '123456',
+      createdAt,
+      updatedAt,
+    });
+
+    const data = await usersService.deleteUser({ id });
+
+    expect(data).toBeInstanceOf(Object);
+    expect(data).toHaveProperty('id');
+    expect(data).toHaveProperty('createdAt');
+    expect(data).toHaveProperty('updatedAt');
+  });
 });
