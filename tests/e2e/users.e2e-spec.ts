@@ -17,9 +17,7 @@ describe('[END-TO-END] UsersController', () => {
         resolve(stdout);
       });
     });
-  });
 
-  beforeEach(async () => {
     const module = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -310,11 +308,9 @@ describe('[END-TO-END] UsersController', () => {
     });
   });
 
-  afterEach(async () => {
-    await app.close();
-  });
-
   afterAll(async () => {
+    await app.close();
+
     await new Promise((resolve, reject) => {
       exec('yarn prisma migrate reset -f', (error, stdout) => {
         if (error) reject(error);
